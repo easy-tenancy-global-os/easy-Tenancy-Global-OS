@@ -163,7 +163,7 @@ export default function PredictiveLifeOS() {
   const [params] = useSearchParams()
   const country = params.get('country') ?? 'KE'
   const [agentLog, setAgentLog] = useState<AgentAction[]>(AGENT_LOG)
-  const [activeSection, setActiveSection] = useState<'overview' | 'crm' | 'spatial' | 'agents'>('overview')
+  const [activeSection, setActiveSection] = useState<'overview' | 'crm' | 'intelligence' | 'spatial' | 'staging' | 'agents'>('overview')
   const accent = COUNTRY_ACCENT[country] ?? BRAND.blue
 
   // Simulate agent activity
@@ -388,12 +388,12 @@ export default function PredictiveLifeOS() {
                   propertyData={{
                     name:     'Nairobi Heights — Unit 4B',
                     type:     'Apartment',
-                    bedrooms: 3,
-                    bathrooms: 2,
-                    sqm:      142,
+                    bedrooms: '3',
+                    bathrooms: '2',
+                    sqm:      '142',
                     price:    'KES 185,000/mo',
                     location: 'Westlands, Nairobi, Kenya',
-                    features: ['Smart Home Ready', 'City View', 'Secure Parking', 'Fibre Internet'],
+                    features: 'Smart Home Ready · City View · Secure Parking · Fibre Internet',
                   }}
                 />
               </Suspense>

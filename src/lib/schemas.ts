@@ -136,7 +136,7 @@ export const AgentActionSchema = z.object({
   completedAt:  ISODate.optional(),
   status:       z.enum(['pending', 'running', 'completed', 'failed', 'cancelled']).default('pending'),
   outputMessage: z.string().max(2048).optional(),
-  costCredits:   z.number().nonneg().optional(),
+  costCredits:   z.number().min(0).optional(),
 })
 
 export type AgentAction = z.infer<typeof AgentActionSchema>

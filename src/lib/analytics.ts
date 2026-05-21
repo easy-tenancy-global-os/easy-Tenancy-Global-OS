@@ -22,6 +22,16 @@ type EventName =
   | 'hero_widget_launched'
   | 'success_fee_demo'
   | 'copilot_used'
+  | 'ai_assistant_used'
+  | 'banner_clicked'
+  | 'tab_switched'
+  | 'staging_complete'
+  | 'tour_generated'
+  | 'compliance_checked'
+  | 'arr_viewed'
+  | 'radial_map_click'
+  | 'lease_action'
+  | 'maintenance_action'
 
 interface EventPayload {
   [key: string]: string | number | boolean | undefined
@@ -33,6 +43,7 @@ interface QueuedEvent {
   ts: number
   session: string
   url: string
+  _retries?: number
 }
 
 // ── Session ID (persisted per tab) ─────────────────────────────
@@ -81,17 +92,20 @@ async function flush() {
       keepalive: true,
     })
     if (!res.ok) {
-      // Re-queue on server error (max 2 retries, don't re-queue 4xx)
-      if (res.status >= 500 && batch[0]?._retries === undefined) {
-        batch.forEach(e => { (e as any)._retries = ((e as any)._retries ?? 0) + 1 })
-        if ((batch[0] as any)._retries < 3) queue.unshift(...batch)
+      // Re-queue on server error (max 3 retries, don't re-queue 4xx)
+      if (res.status >= 500) {
+        const retries = batch[0]?._retries ?? 0
+        if (retries < 3) {
+          batch.forEach(e => { e._retries = (e._retries ?? 0) + 1 })
+          queue.unshift(...batch)
+        }
       }
     }
   } catch {
     // Network offline — re-queue silently (max 3 attempts)
-    const retries = (batch[0] as any)?._retries ?? 0
+    const retries = batch[0]?._retries ?? 0
     if (retries < 3) {
-      batch.forEach(e => { (e as any)._retries = retries + 1 })
+      batch.forEach(e => { e._retries = retries + 1 })
       queue.unshift(...batch)
     }
   } finally {

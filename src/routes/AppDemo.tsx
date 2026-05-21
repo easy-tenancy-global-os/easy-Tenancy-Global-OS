@@ -614,10 +614,10 @@ export default function AppDemo() {
   useEffect(() => {
     if (params.demoTenantId) {
       trackEvent('deep_link_activated', {
-        tenantId: params.demoTenantId,
-        units: params.units,
-        monthlyRent: params.monthlyRent,
-        occupancy: params.occupancy,
+        tenantId:    params.demoTenantId ?? undefined,
+        units:       params.units       ?? undefined,
+        monthlyRent: params.monthlyRent ?? undefined,
+        occupancy:   params.occupancy   ?? undefined,
       })
     }
   }, [])

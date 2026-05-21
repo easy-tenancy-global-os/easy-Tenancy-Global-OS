@@ -12,7 +12,7 @@
 // ═══════════════════════════════════════════════════════════════════════
 
 import React, { useState, useCallback, useId } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { BRAND } from '../lib/tokens'
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -415,7 +415,7 @@ export default function ActionableIntelligence({
   }, [activeTenant, handleAgentAction])
 
   // ── Card variants ─────────────────────────────────────────────────
-  const cardVariants = {
+  const cardVariants: Variants = {
     hidden:  { opacity: 0, y: 24, scale: 0.97 },
     visible: (i: number) => ({
       opacity: 1, y: 0, scale: 1,

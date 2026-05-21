@@ -177,8 +177,9 @@ function SecurityDemoPage() {
   const [tsToken,      setTsToken]      = useState<string | null>(null)
   const [tsVerified,   setTsVerified]   = useState(false)
 
-  const handleAuthenticated = useCallback((s: Record<string, unknown>) => {
-    setSession(s)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleAuthenticated = useCallback((s: any) => {
+    setSession(s as Record<string, unknown>)
     setShowWebAuthn(false)
   }, [])
 

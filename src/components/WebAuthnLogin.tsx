@@ -69,7 +69,7 @@ function base64urlEncode(buffer: ArrayBuffer): string {
 }
 
 function bufferToBase64url(buf: ArrayBufferLike): string {
-  return base64urlEncode(buf)
+  return base64urlEncode(buf instanceof ArrayBuffer ? buf : (buf.slice(0) as unknown as ArrayBuffer))
 }
 
 // ── Prepare credential for JSON ───────────────────────────────────────
@@ -126,10 +126,10 @@ async function registerPasskey(
   // 2. Browser prompts biometric
   const credential = await navigator.credentials.create({
     publicKey: {
-      challenge:  base64urlDecode(challengeData.challenge),
+      challenge:  base64urlDecode(challengeData.challenge).buffer as ArrayBuffer,
       rp:         { name: 'easyTenancy Global OS', id: challengeData.rpId },
       user: {
-        id:          new TextEncoder().encode(email),
+        id:          new TextEncoder().encode(email).buffer as ArrayBuffer,
         name:        email,
         displayName: displayName,
       },
@@ -195,7 +195,7 @@ async function authenticatePasskey(email?: string): Promise<AuthSession> {
   // 2. Browser prompts biometric
   const credential = await navigator.credentials.get({
     publicKey: {
-      challenge:        base64urlDecode(challengeData.challenge),
+      challenge:        base64urlDecode(challengeData.challenge).buffer as ArrayBuffer,
       rpId:             challengeData.rpId,
       userVerification: 'required',
       timeout:          challengeData.timeout ?? 60_000,

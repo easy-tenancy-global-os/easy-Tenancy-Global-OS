@@ -56,6 +56,7 @@ export function useDeepLinkParams() {
 // Live metrics hook — polls /api/metrics/live every 60s with BASE_METRICS fallback
 interface Metrics {
   managers: number
+  activeUnits: number
   leases: number
   countries: number
   uptime: number
@@ -66,7 +67,7 @@ interface Metrics {
 }
 
 const BASE_METRICS: Metrics = {
-  managers: 50000, leases: 2400000, countries: 120,
+  managers: 50000, activeUnits: 892000, leases: 2400000, countries: 120,
   uptime: 99.97, roi: 400, lawsThisMonth: 47,
   complianceRate: 100, hoursaved: 30
 }
@@ -86,6 +87,7 @@ async function fetchLiveMetrics(): Promise<Metrics> {
   const data = await res.json() as LiveMetricsAPIResponse
   return {
     managers:       data.totalManagers      ?? BASE_METRICS.managers,
+    activeUnits:    data.activeUnits        ?? BASE_METRICS.activeUnits,
     leases:         data.leases             ?? BASE_METRICS.leases,
     countries:      data.countries          ?? BASE_METRICS.countries,
     uptime:         BASE_METRICS.uptime,
