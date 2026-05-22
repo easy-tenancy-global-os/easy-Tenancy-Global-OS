@@ -8,17 +8,42 @@ import { trackEvent } from '../lib/analytics'
 // Scroll reveal hook
 export function useScrollReveal() {
   useEffect(() => {
-    const obs = new IntersectionObserver(
-      entries => entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.classList.add('vi')
-          obs.unobserve(e.target)
-        }
-      }),
-      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
-    )
-    document.querySelectorAll('.rv').forEach(el => obs.observe(el))
-    return () => obs.disconnect()
+    const attachObserver = () => {
+      const obs = new IntersectionObserver(
+        entries => entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('vi')
+            obs.unobserve(e.target)
+          }
+        }),
+        { threshold: 0.05, rootMargin: '80px 0px 0px 0px' }
+      )
+      document.querySelectorAll('.rv').forEach(el => obs.observe(el))
+
+      // Immediately reveal elements already in viewport (above fold)
+      requestAnimationFrame(() => {
+        document.querySelectorAll('.rv').forEach(el => {
+          const rect = el.getBoundingClientRect()
+          if (rect.top < window.innerHeight) {
+            el.classList.add('vi')
+            obs.unobserve(el)
+          }
+        })
+      })
+
+      return obs
+    }
+
+    let obs = attachObserver()
+
+    // Re-attach after route change (MutationObserver watches for new .rv nodes)
+    const mut = new MutationObserver(() => {
+      obs.disconnect()
+      obs = attachObserver()
+    })
+    mut.observe(document.body, { childList: true, subtree: true })
+
+    return () => { obs.disconnect(); mut.disconnect() }
   }, [])
 }
 

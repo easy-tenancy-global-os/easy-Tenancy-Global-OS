@@ -4,8 +4,8 @@
    Antigravity Motion · Iridescent Borders · Variable-Weight Typography
 ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Google Fonts: Geologica (variable weight) + JetBrains Mono ─────────── */
-@import url('https://fonts.googleapis.com/css2?family=Geologica:wght@100..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Syne:wght@400..800&family=JetBrains+Mono:wght@400;700&display=swap');
+/* ── Google Fonts loaded via <link> in index.html (non-blocking) ────────── */
+/* @import removed — CSS @import blocks render; fonts load async via HTML */
 
 /* ══════════════════════════════════════════════════════════════════════════
    LAYER 1 — BRAND TOKENS (immutable sovereign identity)

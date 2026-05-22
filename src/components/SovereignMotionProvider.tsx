@@ -24,29 +24,26 @@ import { Orchestrator } from '../lib/GlobalOrchestrator'
 const SOVEREIGN_VARIANTS = {
   initial: {
     opacity: 0,
-    y: 18,
-    scale: 0.993,
-    filter: 'blur(4px)',
+    y: 12,
+    scale: 0.997,
+    // No blur — blur causes heavy GPU repaint and stalls low-end devices
   },
   enter: {
     opacity: 1,
     y: 0,
     scale: 1,
-    filter: 'blur(0px)',
     transition: {
-      duration: 0.52,
+      duration: 0.30,
       ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-      opacity: { duration: 0.38, ease: 'easeOut' },
-      filter: { duration: 0.30, ease: 'easeOut' },
+      opacity: { duration: 0.22, ease: 'easeOut' },
     },
   },
   exit: {
     opacity: 0,
-    y: -10,
-    scale: 0.994,
-    filter: 'blur(3px)',
+    y: -8,
+    scale: 0.996,
     transition: {
-      duration: 0.28,
+      duration: 0.18,
       ease: [0.55, 0, 0.85, 0.05] as [number, number, number, number],
     },
   },

@@ -441,7 +441,9 @@ function SecurityDemoPage() {
 // ── Main App ───────────────────────────────────────────────────────
 export default function App() {
   const location = useLocation()
-  const [appReady, setAppReady] = useState(false)
+  // App is always ready — removed useState(false) guard that caused blank screen
+  // Content renders immediately; animations handle visual polish
+  const appReady = true
 
   // Analytics — fire on every route change
   useEffect(() => {
@@ -451,11 +453,6 @@ export default function App() {
   // Hooks
   useScrollReveal()
   useScrollProgress()
-
-  // Mark app as mounted (prevents FOUC on initial render)
-  useEffect(() => {
-    setAppReady(true)
-  }, [])
 
   if (!appReady) return null
 

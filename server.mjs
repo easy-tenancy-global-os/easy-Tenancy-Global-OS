@@ -7,6 +7,7 @@
 import http from 'http'
 import fs from 'fs'
 import path from 'path'
+import zlib from 'zlib'
 import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -125,34 +126,55 @@ function jsonRes(res, data, status = 200, extraHeaders = {}) {
   res.end(body)
 }
 
-// ── Static file helper ───────────────────────────────────────────────────────
-function serveFile(res, filePath, statusCode = 200) {
+// ── Static file helper (with gzip compression) ──────────────────────────────
+function serveFile(req, res, filePath, statusCode = 200) {
   try {
     const data = fs.readFileSync(filePath)
     const ext  = path.extname(filePath).toLowerCase()
     const mime = MIME[ext] || 'application/octet-stream'
     const isAsset = filePath.includes('/assets/')
+    const acceptsGzip = (req.headers['accept-encoding'] || '').includes('gzip')
+    const compressible = ['.js', '.css', '.html', '.json', '.svg', '.txt', '.xml'].includes(ext)
 
-    res.writeHead(statusCode, {
-      'Content-Type':  mime,
-      'Content-Length': data.byteLength,
-      'Cache-Control': isAsset
-        ? 'public, max-age=31536000, immutable'
-        : 'no-cache, no-store, must-revalidate',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-      'X-Content-Type-Options': 'nosniff',
-    })
-    res.end(data)
+    if (acceptsGzip && compressible && data.byteLength > 1024) {
+      zlib.gzip(data, (err, compressed) => {
+        if (err) { res.writeHead(500); return res.end() }
+        res.writeHead(statusCode, {
+          'Content-Type':     mime,
+          'Content-Encoding': 'gzip',
+          'Content-Length':   compressed.byteLength,
+          'Cache-Control':    isAsset ? 'public, max-age=31536000, immutable' : 'no-cache, no-store, must-revalidate',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+          'X-Content-Type-Options': 'nosniff',
+          'Vary': 'Accept-Encoding',
+        })
+        res.end(compressed)
+      })
+    } else {
+      res.writeHead(statusCode, {
+        'Content-Type':  mime,
+        'Content-Length': data.byteLength,
+        'Cache-Control': isAsset ? 'public, max-age=31536000, immutable' : 'no-cache, no-store, must-revalidate',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+        'X-Content-Type-Options': 'nosniff',
+      })
+      res.end(data)
+    }
   } catch {
     // SPA fallback
     const index = fs.readFileSync(path.join(DIST, 'index.html'))
-    res.writeHead(200, {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'no-cache',
-      'Access-Control-Allow-Origin': '*',
+    zlib.gzip(index, (err, compressed) => {
+      const acceptsGzip = (req.headers['accept-encoding'] || '').includes('gzip')
+      if (!err && acceptsGzip) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Encoding': 'gzip', 'Content-Length': compressed.byteLength, 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' })
+        res.end(compressed)
+      } else {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' })
+        res.end(index)
+      }
     })
-    res.end(index)
   }
 }
 
@@ -345,17 +367,17 @@ const server = http.createServer(async (req, res) => {
 
   // Exact file match
   if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-    return serveFile(res, filePath)
+    return serveFile(req, res, filePath)
   }
 
   // Directory index
   const indexPath = path.join(filePath, 'index.html')
   if (fs.existsSync(indexPath)) {
-    return serveFile(res, indexPath)
+    return serveFile(req, res, indexPath)
   }
 
   // SPA fallback — React Router handles all unknown paths
-  serveFile(res, path.join(DIST, 'index.html'))
+  serveFile(req, res, path.join(DIST, 'index.html'))
 })
 
 server.listen(PORT, '0.0.0.0', () => {
