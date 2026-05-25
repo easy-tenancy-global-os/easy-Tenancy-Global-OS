@@ -43,6 +43,7 @@ import HomePage          from './routes/HomePage'
 import AppDemo           from './routes/AppDemo'
 import GlobalDominance   from './routes/GlobalDominance'
 import PredictiveLifeOS  from './routes/PredictiveLifeOS'
+import RealEstateOS      from './routes/RealEstateOS'
 
 // ── Lazily loaded (code-split, deferred bundles) ───────────────────
 const PropertyDetail  = lazy(() => import('./routes/PropertyDetail'))
@@ -492,6 +493,11 @@ export default function App() {
                 element={<PredictiveLifeOS />}
               />
 
+              {/* ── Real Estate OS ($100B Mobile-First PropTech) ─ */}
+              <Route path="/realestate-os"
+                element={<RealEstateOS />}
+              />
+
               {/* ── AI Spatial Staging (Novita FLUX.1 img2img) ─ */}
               <Route path="/spatial-staging"
                 element={
@@ -530,6 +536,9 @@ export default function App() {
               />
               <Route path="/staging"
                 element={<Navigate to="/spatial-staging" replace />}
+              />
+              <Route path="/os"
+                element={<Navigate to="/realestate-os" replace />}
               />
               <Route path="/security"
                 element={<Navigate to="/security-demo" replace />}

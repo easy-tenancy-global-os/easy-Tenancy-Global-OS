@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { label: 'Pricing',           href: '/#pricing' },
   { label: 'Global Dominance',  href: '/global-dominance' },
   { label: 'Predictive OS',     href: '/predictive-os' },
+  { label: '🏢 RE OS',          href: '/realestate-os' },
 ] as const
 
 const MOBILE_LINKS = [
@@ -18,6 +19,7 @@ const MOBILE_LINKS = [
   { label: '⚡ Predictive OS',    href: '/predictive-os' },
   { label: '🎨 AI Staging',       href: '/spatial-staging' },
   { label: '🔐 Security Demo',    href: '/security-demo' },
+  { label: '🏢 Real Estate OS',   href: '/realestate-os' },
   { label: '💰 Pricing',          href: '/#pricing' },
   { label: '🤖 AI Copilot',       href: '/#ai-copilot' },
 ] as const
