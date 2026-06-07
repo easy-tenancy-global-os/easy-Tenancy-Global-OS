@@ -197,7 +197,7 @@ export default function RadialMap() {
           return 80
         })
         .strength(0.6))
-      .force('charge', forceManyBody().strength(d => d.tier === 0 ? -400 : d.tier === 1 ? -200 : -120))
+      .force('charge', forceManyBody<Node>().strength(d => d.tier === 0 ? -400 : d.tier === 1 ? -200 : -120))
       .force('center', forceCenter(W / 2, H / 2))
       .force('collision', forceCollide<Node>(d => d.tier === 0 ? 55 : d.tier === 1 ? 42 : d.tier === 2 ? 34 : 26))
       .on('tick', () => {

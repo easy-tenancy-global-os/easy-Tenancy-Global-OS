@@ -1,5 +1,5 @@
 // ── Custom hooks ──────────────────────────────────────────────
-import { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import { parseDemoParams } from '../lib/demoData'
 import { createMockWebSocket, type AIFeedEvent } from '../lib/wsStream'
@@ -8,17 +8,42 @@ import { trackEvent } from '../lib/analytics'
 // Scroll reveal hook
 export function useScrollReveal() {
   useEffect(() => {
-    const obs = new IntersectionObserver(
-      entries => entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.classList.add('vi')
-          obs.unobserve(e.target)
-        }
-      }),
-      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
-    )
-    document.querySelectorAll('.rv').forEach(el => obs.observe(el))
-    return () => obs.disconnect()
+    const attachObserver = () => {
+      const obs = new IntersectionObserver(
+        entries => entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('vi')
+            obs.unobserve(e.target)
+          }
+        }),
+        { threshold: 0.05, rootMargin: '80px 0px 0px 0px' }
+      )
+      document.querySelectorAll('.rv').forEach(el => obs.observe(el))
+
+      // Immediately reveal elements already in viewport (above fold)
+      requestAnimationFrame(() => {
+        document.querySelectorAll('.rv').forEach(el => {
+          const rect = el.getBoundingClientRect()
+          if (rect.top < window.innerHeight) {
+            el.classList.add('vi')
+            obs.unobserve(el)
+          }
+        })
+      })
+
+      return obs
+    }
+
+    let obs = attachObserver()
+
+    // Re-attach after route change (MutationObserver watches for new .rv nodes)
+    const mut = new MutationObserver(() => {
+      obs.disconnect()
+      obs = attachObserver()
+    })
+    mut.observe(document.body, { childList: true, subtree: true })
+
+    return () => { obs.disconnect(); mut.disconnect() }
   }, [])
 }
 
@@ -56,6 +81,7 @@ export function useDeepLinkParams() {
 // Live metrics hook — polls /api/metrics/live every 60s with BASE_METRICS fallback
 interface Metrics {
   managers: number
+  activeUnits: number
   leases: number
   countries: number
   uptime: number
@@ -66,7 +92,7 @@ interface Metrics {
 }
 
 const BASE_METRICS: Metrics = {
-  managers: 50000, leases: 2400000, countries: 120,
+  managers: 50000, activeUnits: 892000, leases: 2400000, countries: 120,
   uptime: 99.97, roi: 400, lawsThisMonth: 47,
   complianceRate: 100, hoursaved: 30
 }
@@ -86,6 +112,7 @@ async function fetchLiveMetrics(): Promise<Metrics> {
   const data = await res.json() as LiveMetricsAPIResponse
   return {
     managers:       data.totalManagers      ?? BASE_METRICS.managers,
+    activeUnits:    data.activeUnits        ?? BASE_METRICS.activeUnits,
     leases:         data.leases             ?? BASE_METRICS.leases,
     countries:      data.countries          ?? BASE_METRICS.countries,
     uptime:         BASE_METRICS.uptime,
@@ -182,4 +209,83 @@ export function useTrackFeature() {
   return useCallback((name: string, extra = {}) => {
     trackEvent('feature_clicked', { feature: name, ...extra })
   }, [])
+}
+
+// ── useGazeInteraction ────────────────────────────────────────────────
+// Orion-style 500ms dwell detection on a single element ref.
+// Returns { gazeActive } and attaches pointer events to ref.current.
+// Usage: const { gazeActive } = useGazeInteraction(myRef, 500)
+export function useGazeInteraction(
+  ref: React.RefObject<HTMLElement | null>,
+  dwell = 500
+): { gazeActive: boolean } {
+  const [gazeActive, setGazeActive] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    const onEnter = () => {
+      timer.current = setTimeout(() => {
+        setGazeActive(true)
+        el.classList.add('gaze-active')
+      }, dwell)
+    }
+    const onLeave = () => {
+      if (timer.current) { clearTimeout(timer.current); timer.current = null }
+      setGazeActive(false)
+      el.classList.remove('gaze-active')
+    }
+
+    el.addEventListener('pointerenter', onEnter)
+    el.addEventListener('pointerleave', onLeave)
+    return () => {
+      el.removeEventListener('pointerenter', onEnter)
+      el.removeEventListener('pointerleave', onLeave)
+      if (timer.current) clearTimeout(timer.current)
+    }
+  }, [ref, dwell])
+
+  return { gazeActive }
+}
+
+// ── useCulturalLayout ─────────────────────────────────────────────────
+// Detects RTL/compact layout from browser locale + timezone.
+// Injects html.rtl + html.compact classes and dir attribute.
+// Usage: const { rtl, compact, country, lang } = useCulturalLayout()
+const RTL_LANG_SET = new Set(['ar', 'he', 'fa', 'ur', 'ps', 'sd', 'dv'])
+const COMPACT_TZ   = ['Asia/Tokyo', 'Asia/Shanghai', 'Asia/Seoul', 'Asia/Taipei']
+
+interface CulturalLayout {
+  rtl:     boolean
+  compact: boolean
+  country: string
+  lang:    string
+  tz:      string
+}
+
+export function useCulturalLayout(): CulturalLayout {
+  const [layout, setLayout] = useState<CulturalLayout>({
+    rtl: false, compact: false, country: 'US', lang: 'en', tz: 'UTC',
+  })
+
+  useEffect(() => {
+    const lang    = (navigator.language || 'en').split('-')[0].toLowerCase()
+    const region  = (navigator.language || 'en-US').split('-')[1]?.toUpperCase() ?? 'US'
+    const tz      = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+    const rtl     = RTL_LANG_SET.has(lang)
+    const compact = COMPACT_TZ.some(p => tz.startsWith(p.split('/')[0] + '/' + p.split('/')[1]))
+
+    const html = document.documentElement
+    html.classList.toggle('rtl', rtl)
+    html.classList.toggle('compact', compact)
+    if (rtl) html.setAttribute('dir', 'rtl')
+    else html.setAttribute('dir', 'ltr')
+    html.setAttribute('lang', navigator.language || 'en')
+
+    setLayout({ rtl, compact, country: region, lang, tz })
+  }, [])
+
+  return layout
 }
